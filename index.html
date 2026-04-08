@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Yuva Tracking Thorn</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <!-- Full-screen layers (back to front) -->
+    <video id="input_video" autoplay playsinline muted></video>
+    <canvas id="output_canvas"></canvas>    <!-- tracking lines -->
+    <canvas id="ar_canvas"></canvas>        <!-- AR particle drawing -->
+    <div class="scanlines"></div>
+
+    <!-- HUD Corners -->
+    <div class="hud-corners" aria-hidden="true">
+        <div class="hc tl"></div><div class="hc tr"></div>
+        <div class="hc bl"></div><div class="hc br"></div>
+    </div>
+
+    <!-- Top Bar -->
+    <header class="top-bar">
+        <div class="title-block">
+            <span class="brand-tag">YUVA</span>
+            <span class="brand-sub">TRACKING THORN</span>
+        </div>
+        <div class="status-pill" id="statusPill">
+            <span class="status-dot"></span>
+            <span class="status-text">INIT</span>
+        </div>
+    </header>
+
+    <!-- Pinch hint (shows when AR draw mode is on) -->
+    <div id="pinchHint" class="pinch-hint hidden">
+        <span class="pinch-icon">🤏</span> PINCH TO DRAW
+    </div>
+
+    <!-- Recording Indicator -->
+    <div id="recIndicator" class="rec-indicator hidden">
+        <span class="rec-dot"></span>
+        <span id="recTimer">00:00</span>
+    </div>
+
+    <!-- AR Theme Drawer (slides up from bottom) -->
+    <div id="themeDrawer" class="theme-drawer hidden">
+        <div class="theme-drawer-title">MAGICAL ARTS</div>
+        <div class="theme-grid">
+            <button class="theme-btn active" data-theme="mystic">
+                <span class="theme-icon">✧</span><span>MYSTIC</span>
+            </button>
+            <button class="theme-btn" data-theme="plasma">
+                <span class="theme-icon">⚡</span><span>PLASMA</span>
+            </button>
+            <button class="theme-btn" data-theme="hex">
+                <span class="theme-icon">⬡</span><span>HEX</span>
+            </button>
+            <button class="theme-btn" data-theme="dragon">
+                <span class="theme-icon">🐉</span><span>DRAGON</span>
+            </button>
+            <button class="theme-btn" data-theme="galaxy">
+                <span class="theme-icon">🌌</span><span>GALAXY</span>
+            </button>
+            <button class="theme-btn" data-theme="ocean">
+                <span class="theme-icon">🌊</span><span>OCEAN</span>
+            </button>
+        </div>
+        <button id="clearARBtn" class="clear-btn">🗑 CLEAR CANVAS</button>
+    </div>
+
+    <!-- Bottom HUD Panel -->
+    <footer class="bottom-hud">
+        <div class="stats-row">
+            <div class="stat-block">
+                <span class="stat-label">FACE</span>
+                <span class="stat-val" id="face-status">—</span>
+            </div>
+            <div class="stat-block">
+                <span class="stat-label">L-HAND</span>
+                <span class="stat-val" id="handL-status">—</span>
+            </div>
+            <div class="stat-block">
+                <span class="stat-label">R-HAND</span>
+                <span class="stat-val" id="handR-status">—</span>
+            </div>
+            <div class="stat-block">
+                <span class="stat-label">MODE</span>
+                <span class="stat-val" id="drawModeLabel">—</span>
+            </div>
+        </div>
+        <div class="controls-row">
+            <button id="toggleFaceTracking" class="ctrl-btn active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                <span>FACE</span>
+            </button>
+            <button id="toggleHandTracking" class="ctrl-btn active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0m0 5V3a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M6 10V8a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v5a8 8 0 0 0 16 0v-3"/></svg>
+                <span>HANDS</span>
+            </button>
+            <button id="toggleARDraw" class="ctrl-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span>DRAW</span>
+            </button>
+            <button id="toggleRecord" class="ctrl-btn">
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+                <span>REC</span>
+            </button>
+            <button id="flipCamera" class="ctrl-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+                <span>FLIP</span>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loader-ring"></div>
+        <p>INITIALIZING SYSTEMS</p>
+        <p class="loader-sub">YUVA TRACKING THORN</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
