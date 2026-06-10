@@ -1,131 +1,1597 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Yuva Tracking Thorn</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Tech · AI Ecosystem</title>
+
+<!-- Google Fonts: Orbitron (display) + Rajdhani (body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- MediaPipe Hands via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+<style>
+/* ===================================================
+   CSS VARIABLES & RESET
+=================================================== */
+:root {
+  --cyan:        #00f5ff;
+  --cyan-dim:    #00b8cc;
+  --cyan-glow:   rgba(0,245,255,0.18);
+  --purple:      #7b2fff;
+  --purple-dim:  #4a1a99;
+  --purple-glow: rgba(123,47,255,0.22);
+  --obsidian:    #05050a;
+  --glass:       rgba(255,255,255,0.04);
+  --glass-border:rgba(0,245,255,0.12);
+  --text-primary:#e8f4ff;
+  --text-muted:  #7a9ab0;
+  --danger:      #ff3c6e;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--obsidian);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  cursor: none; /* hide native cursor — we have a virtual one */
+}
+
+/* ===================================================
+   ANIMATED STARFIELD BACKGROUND
+=================================================== */
+#starfield {
+  position: fixed; inset: 0; z-index: 0;
+  pointer-events: none;
+}
+
+/* ===================================================
+   NAV BAR
+=================================================== */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 60px;
+  background: rgba(5,5,10,0.72);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.nav-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem; font-weight: 900; letter-spacing: 3px;
+  color: var(--cyan);
+  text-shadow: 0 0 20px var(--cyan);
+}
+.nav-logo span { color: var(--purple); }
+
+.nav-links {
+  display: flex; gap: 40px; list-style: none;
+}
+.nav-links a {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: .95rem; font-weight: 600; letter-spacing: 1.5px;
+  color: var(--text-muted); text-decoration: none; text-transform: uppercase;
+  transition: color .3s, text-shadow .3s;
+}
+.nav-links a:hover,
+.nav-links a.gesture-hover {
+  color: var(--cyan);
+  text-shadow: 0 0 12px var(--cyan);
+}
+
+.nav-cta {
+  font-family: 'Orbitron', monospace;
+  font-size: .75rem; font-weight: 700; letter-spacing: 2px;
+  color: var(--obsidian); background: var(--cyan);
+  border: none; padding: 10px 26px;
+  cursor: none;
+  clip-path: polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+  transition: background .3s, box-shadow .3s, transform .2s;
+}
+.nav-cta:hover,
+.nav-cta.gesture-hover {
+  background: #fff;
+  box-shadow: 0 0 32px var(--cyan);
+  transform: scale(1.05);
+}
+
+/* ===================================================
+   HERO SECTION
+=================================================== */
+#hero {
+  position: relative; z-index: 10;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 120px 40px 80px;
+  overflow: hidden;
+}
+
+.hero-eyebrow {
+  font-family: 'Space Mono', monospace;
+  font-size: .72rem; letter-spacing: 4px; color: var(--purple);
+  text-transform: uppercase; margin-bottom: 24px;
+  animation: fadeUp .8s ease both;
+}
+
+.hero-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(2.4rem, 6vw, 5.2rem);
+  font-weight: 900; line-height: 1.08; letter-spacing: -1px;
+  margin-bottom: 12px;
+  animation: fadeUp .8s .15s ease both;
+}
+.hero-title .line1 { display: block; color: var(--text-primary); }
+.hero-title .line2 {
+  display: block;
+  background: linear-gradient(90deg, var(--cyan) 0%, var(--purple) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 22px rgba(0,245,255,.5));
+}
+
+.hero-sub {
+  max-width: 580px;
+  font-size: 1.15rem; font-weight: 400; color: var(--text-muted);
+  line-height: 1.7; margin: 20px auto 44px;
+  animation: fadeUp .8s .3s ease both;
+}
+
+.hero-btns {
+  display: flex; gap: 18px; justify-content: center; flex-wrap: wrap;
+  animation: fadeUp .8s .45s ease both;
+}
+
+.btn-primary {
+  font-family: 'Orbitron', monospace;
+  font-size: .78rem; font-weight: 700; letter-spacing: 2px;
+  color: var(--obsidian);
+  background: linear-gradient(135deg, var(--cyan) 0%, #00a8c6 100%);
+  border: none; padding: 16px 40px;
+  cursor: none;
+  clip-path: polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+  transition: box-shadow .3s, transform .2s;
+  position: relative; z-index: 1;
+}
+.btn-primary:hover,
+.btn-primary.gesture-hover {
+  box-shadow: 0 0 50px var(--cyan), 0 0 100px rgba(0,245,255,.3);
+  transform: scale(1.06) translateY(-2px);
+}
+
+.btn-secondary {
+  font-family: 'Orbitron', monospace;
+  font-size: .78rem; font-weight: 700; letter-spacing: 2px;
+  color: var(--cyan);
+  background: transparent;
+  border: 1px solid var(--cyan);
+  padding: 16px 40px;
+  cursor: none;
+  clip-path: polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+  transition: background .3s, box-shadow .3s, transform .2s;
+}
+.btn-secondary:hover,
+.btn-secondary.gesture-hover {
+  background: var(--cyan-glow);
+  box-shadow: 0 0 30px var(--cyan);
+  transform: scale(1.06) translateY(-2px);
+}
+
+/* ===================================================
+   PARTICLE SPHERE CANVAS
+=================================================== */
+#sphere-canvas {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  z-index: 0; pointer-events: none;
+  opacity: .9;
+}
+
+/* ===================================================
+   STATS STRIP
+=================================================== */
+.stats-strip {
+  position: relative; z-index: 10;
+  display: flex; justify-content: center; gap: 0;
+  background: rgba(0,245,255,0.04);
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 30px 60px;
+  backdrop-filter: blur(10px);
+}
+
+.stat-item {
+  flex: 1; max-width: 200px;
+  text-align: center; padding: 0 40px;
+  border-right: 1px solid var(--glass-border);
+}
+.stat-item:last-child { border-right: none; }
+
+.stat-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 2.2rem; font-weight: 900;
+  color: var(--cyan); text-shadow: 0 0 20px var(--cyan);
+  display: block;
+}
+.stat-label {
+  font-size: .78rem; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-muted); margin-top: 4px; display: block;
+}
+
+/* ===================================================
+   HOLOGRAPHIC CARDS SECTION
+=================================================== */
+#ecosystem {
+  position: relative; z-index: 10;
+  padding: 100px 60px;
+}
+
+.section-header {
+  text-align: center; margin-bottom: 64px;
+}
+.section-tag {
+  font-family: 'Space Mono', monospace;
+  font-size: .68rem; letter-spacing: 4px; color: var(--purple);
+  text-transform: uppercase; display: block; margin-bottom: 14px;
+}
+.section-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+  font-weight: 700; color: var(--text-primary); line-height: 1.2;
+}
+.section-title em {
+  font-style: normal;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px; max-width: 1200px; margin: 0 auto;
+}
+
+/* Holographic card */
+.holo-card {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 2px;
+  padding: 40px 36px;
+  cursor: none;
+  overflow: hidden;
+  transition: transform .4s cubic-bezier(.23,1,.32,1),
+              box-shadow .4s ease,
+              border-color .4s;
+  backdrop-filter: blur(12px);
+}
+
+/* Rainbow holographic shimmer */
+.holo-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg,
+    rgba(0,245,255,0) 0%,
+    rgba(0,245,255,0.07) 30%,
+    rgba(123,47,255,0.07) 60%,
+    rgba(0,245,255,0) 100%);
+  opacity: 0; transition: opacity .4s;
+}
+
+.holo-card::after {
+  content: '';
+  position: absolute; top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  transition: left .6s ease;
+}
+
+.holo-card:hover::before,
+.holo-card.gesture-hover::before { opacity: 1; }
+
+.holo-card:hover::after,
+.holo-card.gesture-hover::after { left: 160%; }
+
+.holo-card:hover,
+.holo-card.gesture-hover {
+  transform: translateY(-10px) scale(1.01);
+  border-color: var(--cyan);
+  box-shadow:
+    0 0 0 1px var(--cyan),
+    0 20px 60px rgba(0,245,255,0.15),
+    0 40px 80px rgba(5,5,10,.8);
+}
+
+.card-icon {
+  width: 52px; height: 52px;
+  border: 1px solid var(--glass-border);
+  border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 24px;
+  font-size: 1.4rem;
+  position: relative; z-index: 1;
+  transition: border-color .3s, box-shadow .3s;
+}
+.holo-card:hover .card-icon,
+.holo-card.gesture-hover .card-icon {
+  border-color: var(--cyan);
+  box-shadow: 0 0 20px var(--cyan-glow);
+}
+
+.card-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem; font-weight: 700; letter-spacing: 1px;
+  color: var(--text-primary); margin-bottom: 12px;
+  position: relative; z-index: 1;
+}
+
+.card-desc {
+  font-size: .95rem; color: var(--text-muted);
+  line-height: 1.65; position: relative; z-index: 1;
+}
+
+.card-badge {
+  display: inline-block; margin-top: 20px;
+  font-family: 'Space Mono', monospace;
+  font-size: .6rem; letter-spacing: 2px; padding: 5px 12px;
+  border: 1px solid;
+  position: relative; z-index: 1;
+}
+.badge-cyan  { color: var(--cyan); border-color: var(--cyan-dim); }
+.badge-purple{ color: var(--purple); border-color: var(--purple-dim); }
+.badge-green { color: #00ff88; border-color: #00994d; }
+
+/* Corner accents on cards */
+.card-corner {
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: var(--cyan);
+  border-style: solid;
+  opacity: 0; transition: opacity .3s;
+}
+.card-corner.tl { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
+.card-corner.br { bottom: 10px; right: 10px; border-width: 0 1px 1px 0; }
+.holo-card:hover .card-corner,
+.holo-card.gesture-hover .card-corner { opacity: 1; }
+
+/* ===================================================
+   GESTURE INSTRUCTION PANEL
+=================================================== */
+#gesture-guide {
+  position: relative; z-index: 10;
+  padding: 80px 60px;
+  background: linear-gradient(180deg, transparent 0%, rgba(0,245,255,0.03) 100%);
+  border-top: 1px solid var(--glass-border);
+}
+
+.gesture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+  gap: 20px; max-width: 900px; margin: 0 auto;
+}
+
+.gesture-item {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 2px;
+  padding: 28px 24px;
+  text-align: center;
+  transition: border-color .3s;
+}
+.gesture-item:hover { border-color: var(--purple); }
+
+.gesture-emoji { font-size: 2rem; display: block; margin-bottom: 12px; }
+.gesture-name {
+  font-family: 'Orbitron', monospace;
+  font-size: .75rem; font-weight: 700; letter-spacing: 2px;
+  color: var(--cyan); margin-bottom: 8px;
+}
+.gesture-desc {
+  font-size: .85rem; color: var(--text-muted); line-height: 1.5;
+}
+
+/* ===================================================
+   FOOTER
+=================================================== */
+footer {
+  position: relative; z-index: 10;
+  padding: 40px 60px;
+  border-top: 1px solid var(--glass-border);
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(5,5,10,.9);
+}
+.footer-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: .85rem; font-weight: 900; letter-spacing: 3px;
+  color: var(--cyan); opacity: .7;
+}
+.footer-copy {
+  font-family: 'Space Mono', monospace;
+  font-size: .65rem; color: var(--text-muted); letter-spacing: 1px;
+}
+
+/* ===================================================
+   VIRTUAL CURSOR
+=================================================== */
+#virtual-cursor {
+  position: fixed; z-index: 9999;
+  pointer-events: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 12px var(--cyan), 0 0 30px rgba(0,245,255,.5);
+  transform: translate(-50%,-50%);
+  transition: width .12s, height .12s, background .12s, box-shadow .12s;
+  display: none; /* shown once hand is detected */
+}
+#virtual-cursor.pinching {
+  width: 30px; height: 30px;
+  background: var(--danger);
+  box-shadow: 0 0 20px var(--danger), 0 0 50px rgba(255,60,110,.6);
+}
+#virtual-cursor-ring {
+  position: fixed; z-index: 9998;
+  pointer-events: none;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,245,255,.4);
+  transform: translate(-50%,-50%);
+  transition: width .2s, height .2s, opacity .2s, border-color .2s;
+  display: none;
+}
+#virtual-cursor-ring.pinching {
+  border-color: var(--danger);
+  width: 56px; height: 56px;
+}
+
+/* ===================================================
+   MOBILE PERMISSION MODAL
+=================================================== */
+.permission-modal {
+  position: fixed; inset: 0; z-index: 10001;
+  background: rgba(0,0,0,0.9);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+}
+.permission-modal.hidden { display: none; }
+
+.permission-box {
+  background: linear-gradient(135deg, rgba(5,5,10,0.95), rgba(123,47,255,0.1));
+  border: 1px solid var(--cyan);
+  border-radius: 8px;
+  padding: 40px 30px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(0,245,255,0.2);
+}
+
+.permission-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--cyan);
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+.permission-text {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.permission-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 12px 28px;
+  margin: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .3s;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.permission-btn:not(.secondary) {
+  background: linear-gradient(135deg, var(--cyan), #00a8c6);
+  color: var(--obsidian);
+  box-shadow: 0 0 30px rgba(0,245,255,0.3);
+}
+
+.permission-btn:not(.secondary):hover {
+  box-shadow: 0 0 50px rgba(0,245,255,0.5);
+  transform: scale(1.05);
+}
+
+.permission-btn.secondary {
+  background: transparent;
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+}
+
+.permission-btn.secondary:hover {
+  background: var(--cyan-glow);
+}
+
+.permission-note {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 18px;
+  opacity: 0.8;
+}
+
+/* ===================================================
+   MOBILE RESPONSIVE
+=================================================== */
+@media (max-width: 768px) {
+  nav {
+    padding: 12px 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .nav-logo {
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .nav-links {
+    gap: 15px;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .nav-links a {
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+  }
+
+  .nav-cta {
+    font-size: 0.65rem;
+    padding: 8px 16px;
+  }
+
+  #hero {
+    padding: 100px 20px 60px;
+  }
+
+  .hero-title {
+    font-size: clamp(1.8rem, 5vw, 3.5rem);
+  }
+
+  .hero-sub {
+    font-size: 0.95rem;
+    max-width: 100%;
+  }
+
+  #sphere-canvas {
+    width: 300px !important;
+    height: 300px !important;
+  }
+
+  .stats-strip {
+    padding: 20px 20px;
+    flex-wrap: wrap;
+    gap: 20px 0;
+  }
+
+  .stat-item {
+    max-width: 50%;
+    flex: 1 1 50%;
+    padding: 0 10px;
+    border-right: none;
+  }
+
+  .stat-value {
+    font-size: 1.6rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+  }
+
+  #ecosystem {
+    padding: 60px 20px;
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  #gesture-guide {
+    padding: 60px 20px;
+  }
+
+  .gesture-grid {
+    grid-template-columns: 1fr;
+  }
+
+  footer {
+    padding: 30px 20px;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  #cam-container {
+    width: 150px;
+    height: 110px;
+    bottom: 16px;
+    right: 16px;
+  }
+
+  #gesture-status {
+    bottom: 140px;
+    right: 16px;
+    font-size: 0.5rem;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+
+  #hero {
+    padding: 80px 15px 40px;
+  }
+
+  .hero-title {
+    font-size: clamp(1.4rem, 4vw, 2.8rem);
+  }
+
+  .hero-eyebrow {
+    font-size: 0.6rem;
+  }
+
+  .hero-btns {
+    gap: 12px;
+  }
+
+  .btn-primary, .btn-secondary {
+    font-size: 0.7rem;
+    padding: 12px 24px;
+  }
+
+  #cam-container {
+    width: 120px;
+    height: 90px;
+  }
+
+  .stat-item {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .permission-box {
+    padding: 30px 20px;
+    max-width: 90%;
+  }
+
+  .permission-title {
+    font-size: 1.1rem;
+  }
+
+  .permission-text {
+    font-size: 0.85rem;
+  }
+}
+
+/* ===================================================
+   KEYFRAME ANIMATIONS
+=================================================== */
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(30px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: translate(-50%,-50%) scale(1); opacity:.5; }
+  100% { transform: translate(-50%,-50%) scale(1.8); opacity:0; }
+}
+
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Scanline overlay for atmosphere */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9990; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,.03) 2px,
+    rgba(0,0,0,.03) 4px
+  );
+}
+
+/* ===================================================
+   SCROLL INDICATOR
+=================================================== */
+.scroll-indicator {
+  position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  animation: fadeUp 1s .8s ease both;
+}
+.scroll-indicator span {
+  font-family: 'Space Mono', monospace;
+  font-size: .6rem; letter-spacing: 3px; color: var(--text-muted);
+}
+.scroll-line {
+  width: 1px; height: 50px;
+  background: linear-gradient(180deg, var(--cyan), transparent);
+  animation: scroll-pulse 2s ease-in-out infinite;
+}
+@keyframes scroll-pulse {
+  0%,100% { opacity:.3; transform: scaleY(.6) translateY(-10px); }
+  50%      { opacity:1;  transform: scaleY(1) translateY(0); }
+}
+</style>
 </head>
 <body>
 
-    <!-- Full-screen layers (back to front) -->
-    <video id="input_video" autoplay playsinline muted></video>
-    <canvas id="output_canvas"></canvas>    <!-- tracking lines -->
-    <canvas id="ar_canvas"></canvas>        <!-- AR particle drawing -->
-    <div class="scanlines"></div>
+<!-- ============ STARFIELD ============ -->
+<canvas id="starfield"></canvas>
 
-    <!-- HUD Corners -->
-    <div class="hud-corners" aria-hidden="true">
-        <div class="hc tl"></div><div class="hc tr"></div>
-        <div class="hc bl"></div><div class="hc br"></div>
+<!-- ============ VIRTUAL CURSOR ============ -->
+<div id="virtual-cursor"></div>
+<div id="virtual-cursor-ring"></div>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <div class="nav-logo">YOUR<span>·</span>TECH</div>
+  <ul class="nav-links">
+    <li><a href="#hero">Home</a></li>
+    <li><a href="#ecosystem">Ecosystem</a></li>
+    <li><a href="#gesture-guide">Gesture</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <button class="nav-cta">LAUNCH APP</button>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section id="hero">
+  <!-- Particle sphere rendered by JS into this canvas -->
+  <canvas id="sphere-canvas" width="700" height="700"></canvas>
+
+  <p class="hero-eyebrow">// AI-POWERED INTERFACE — GESTURE ENABLED</p>
+  <h1 class="hero-title">
+    <span class="line1">YOUR TECH</span>
+    <span class="line2">AI ECOSYSTEM</span>
+  </h1>
+  <p class="hero-sub">
+    An ultra-premium, gesture-driven platform where intelligence meets design.
+    Control everything with your hands — no mouse required.
+  </p>
+  <div class="hero-btns">
+    <button class="btn-primary">ENTER ECOSYSTEM</button>
+    <button class="btn-secondary">WATCH DEMO</button>
+  </div>
+
+  <div class="scroll-indicator">
+    <div class="scroll-line"></div>
+    <span>SCROLL</span>
+  </div>
+</section>
+
+<!-- ============ STATS ============ -->
+<div class="stats-strip">
+  <div class="stat-item">
+    <span class="stat-value" data-target="99.7">0</span>
+    <span class="stat-label">Model Accuracy %</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-value" data-target="4">0</span>
+    <span class="stat-label">ms Gesture Latency</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-value" data-target="21">0</span>
+    <span class="stat-label">Hand Landmarks</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-value" data-target="120">0</span>
+    <span class="stat-label">FPS Processing</span>
+  </div>
+</div>
+
+<!-- ============ ECOSYSTEM CARDS ============ -->
+<section id="ecosystem">
+  <div class="section-header">
+    <span class="section-tag">// CORE MODULES</span>
+    <h2 class="section-title">The <em>Intelligence</em> Layer</h2>
+  </div>
+  <div class="cards-grid">
+
+    <div class="holo-card" data-href="#neural">
+      <div class="card-corner tl"></div>
+      <div class="card-corner br"></div>
+      <div class="card-icon">🧠</div>
+      <h3 class="card-title">NEURAL CORE</h3>
+      <p class="card-desc">Distributed inference engine with sub-millisecond response. Adaptive learning across 72 concurrent data streams.</p>
+      <span class="card-badge badge-cyan">ACTIVE</span>
     </div>
 
-    <!-- Top Bar -->
-    <header class="top-bar">
-        <div class="title-block">
-            <span class="brand-tag">YUVA</span>
-            <span class="brand-sub">TRACKING THORN</span>
-        </div>
-        <div class="status-pill" id="statusPill">
-            <span class="status-dot"></span>
-            <span class="status-text">INIT</span>
-        </div>
-    </header>
-
-    <!-- Pinch hint (shows when AR draw mode is on) -->
-    <div id="pinchHint" class="pinch-hint hidden">
-        <span class="pinch-icon">🤏</span> PINCH TO DRAW
+    <div class="holo-card" data-href="#vision">
+      <div class="card-corner tl"></div>
+      <div class="card-corner br"></div>
+      <div class="card-icon">👁️</div>
+      <h3 class="card-title">VISION MATRIX</h3>
+      <p class="card-desc">MediaPipe-powered hand tracking with 21 skeletal landmarks. Real-time gesture recognition at 120 FPS.</p>
+      <span class="card-badge badge-purple">LIVE</span>
     </div>
 
-    <!-- Recording Indicator -->
-    <div id="recIndicator" class="rec-indicator hidden">
-        <span class="rec-dot"></span>
-        <span id="recTimer">00:00</span>
+    <div class="holo-card" data-href="#quantum">
+      <div class="card-corner tl"></div>
+      <div class="card-corner br"></div>
+      <div class="card-icon">⚡</div>
+      <h3 class="card-title">QUANTUM SYNC</h3>
+      <p class="card-desc">Zero-latency state synchronization across all interface layers. Event horizon processing at the edge.</p>
+      <span class="card-badge badge-green">STABLE</span>
     </div>
 
-    <!-- AR Theme Drawer (slides up from bottom) -->
-    <div id="themeDrawer" class="theme-drawer hidden">
-        <div class="theme-drawer-title">MAGICAL ARTS</div>
-        <div class="theme-grid">
-            <button class="theme-btn active" data-theme="mystic">
-                <span class="theme-icon">✧</span><span>MYSTIC</span>
-            </button>
-            <button class="theme-btn" data-theme="plasma">
-                <span class="theme-icon">⚡</span><span>PLASMA</span>
-            </button>
-            <button class="theme-btn" data-theme="hex">
-                <span class="theme-icon">⬡</span><span>HEX</span>
-            </button>
-            <button class="theme-btn" data-theme="dragon">
-                <span class="theme-icon">🐉</span><span>DRAGON</span>
-            </button>
-            <button class="theme-btn" data-theme="galaxy">
-                <span class="theme-icon">🌌</span><span>GALAXY</span>
-            </button>
-            <button class="theme-btn" data-theme="ocean">
-                <span class="theme-icon">🌊</span><span>OCEAN</span>
-            </button>
-        </div>
-        <button id="clearARBtn" class="clear-btn">🗑 CLEAR CANVAS</button>
+    <div class="holo-card" data-href="#holograph">
+      <div class="card-corner tl"></div>
+      <div class="card-corner br"></div>
+      <div class="card-icon">💎</div>
+      <h3 class="card-title">HOLO RENDER</h3>
+      <p class="card-desc">8K spatial computing pipeline. Depth-aware UI with volumetric shadows and real-time ray-traced reflections.</p>
+      <span class="card-badge badge-cyan">BETA</span>
     </div>
 
-    <!-- Bottom HUD Panel -->
-    <footer class="bottom-hud">
-        <div class="stats-row">
-            <div class="stat-block">
-                <span class="stat-label">FACE</span>
-                <span class="stat-val" id="face-status">—</span>
-            </div>
-            <div class="stat-block">
-                <span class="stat-label">L-HAND</span>
-                <span class="stat-val" id="handL-status">—</span>
-            </div>
-            <div class="stat-block">
-                <span class="stat-label">R-HAND</span>
-                <span class="stat-val" id="handR-status">—</span>
-            </div>
-            <div class="stat-block">
-                <span class="stat-label">MODE</span>
-                <span class="stat-val" id="drawModeLabel">—</span>
-            </div>
-        </div>
-        <div class="controls-row">
-            <button id="toggleFaceTracking" class="ctrl-btn active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                <span>FACE</span>
-            </button>
-            <button id="toggleHandTracking" class="ctrl-btn active">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0m0 5V3a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M6 10V8a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v5a8 8 0 0 0 16 0v-3"/></svg>
-                <span>HANDS</span>
-            </button>
-            <button id="toggleARDraw" class="ctrl-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                <span>DRAW</span>
-            </button>
-            <button id="toggleRecord" class="ctrl-btn">
-                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
-                <span>REC</span>
-            </button>
-            <button id="flipCamera" class="ctrl-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
-                <span>FLIP</span>
-            </button>
-        </div>
-    </footer>
-
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loader-ring"></div>
-        <p>INITIALIZING SYSTEMS</p>
-        <p class="loader-sub">YUVA TRACKING THORN</p>
+    <div class="holo-card" data-href="#sentinel">
+      <div class="card-corner tl"></div>
+      <div class="card-corner br"></div>
+      <div class="card-icon">🛡️</div>
+      <h3 class="card-title">SENTINEL AI</h3>
+      <p class="card-desc">Biometric authentication layer. Continuous liveness detection and gesture-signature verification.</p>
+      <span class="card-badge badge-purple">SECURED</span>
     </div>
 
-    <script src="script.js"></script>
+    <div class="holo-card" data-href="#nexus">
+      <div class="card-corner tl"></div>
+      <div class="card-corner br"></div>
+      <div class="card-icon">🌐</div>
+      <h3 class="card-title">NEXUS GRID</h3>
+      <p class="card-desc">Mesh network intelligence. 340+ nodes synchronized through our proprietary photonic protocol layer.</p>
+      <span class="card-badge badge-green">ONLINE</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ GESTURE GUIDE ============ -->
+<section id="gesture-guide">
+  <div class="section-header">
+    <span class="section-tag">// CONTROL SCHEME</span>
+    <h2 class="section-title">Navigate with <em>Gestures</em></h2>
+  </div>
+  <div class="gesture-grid">
+    <div class="gesture-item">
+      <span class="gesture-emoji">☝️</span>
+      <div class="gesture-name">POINT</div>
+      <div class="gesture-desc">Extend index finger to move the virtual cursor across the interface</div>
+    </div>
+    <div class="gesture-item">
+      <span class="gesture-emoji">🤏</span>
+      <div class="gesture-name">PINCH</div>
+      <div class="gesture-desc">Bring thumb &amp; index finger together to click buttons and cards</div>
+    </div>
+    <div class="gesture-item">
+      <span class="gesture-emoji">🖐️</span>
+      <div class="gesture-name">SWIPE</div>
+      <div class="gesture-desc">Open hand moved rapidly up or down scrolls the page</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer id="contact">
+  <div class="footer-logo">YOUR·TECH</div>
+  <div class="footer-copy">© 2025 YOUR TECH AI ECOSYSTEM · ALL RIGHTS RESERVED</div>
+</footer>
+
+<!-- ============ WEBCAM PIP ============ -->
+<div id="cam-container">
+  <video id="cam-video" playsinline autoplay muted webkit-playsinline></video>
+  <div id="cam-label">◉ GESTURE CAM</div>
+</div>
+<div id="gesture-status">INITIALIZING...</div>
+
+
+
+<!-- ============================================================
+  JAVASCRIPT — Starfield + Sphere + MediaPipe Hands
+============================================================ -->
+<script>
+/* ====================================================
+   1. STARFIELD BACKGROUND
+==================================================== */
+(function() {
+  const canvas = document.getElementById('starfield');
+  const ctx    = canvas.getContext('2d');
+  let W, H, stars = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  for (let i = 0; i < 240; i++) {
+    stars.push({
+      x: Math.random() * 2000 - 1000,
+      y: Math.random() * 2000 - 1000,
+      z: Math.random() * 2000,
+      pz: 0
+    });
+  }
+
+  function drawStars() {
+    ctx.fillStyle = 'rgba(5,5,10,0.25)';
+    ctx.fillRect(0,0,W,H);
+
+    const cx = W/2, cy = H/2;
+    stars.forEach(s => {
+      s.z -= 1.2;
+      if (s.z <= 0) { s.z = 2000; s.x = Math.random()*2000-1000; s.y = Math.random()*2000-1000; }
+
+      const sx = (s.x / s.z) * 500 + cx;
+      const sy = (s.y / s.z) * 500 + cy;
+      const sz = (1 - s.z/2000) * 2.5;
+      const alpha = 1 - s.z/2000;
+
+      ctx.beginPath();
+      ctx.arc(sx, sy, Math.max(sz,0.2), 0, Math.PI*2);
+      ctx.fillStyle = `rgba(180,220,255,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(drawStars);
+  }
+  drawStars();
+})();
+
+
+/* ====================================================
+   2. FLOATING PARTICLE SPHERE
+==================================================== */
+(function() {
+  const canvas = document.getElementById('sphere-canvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 700, H = 700, R = 230;
+  const N = 1800;
+
+  let particles = [];
+  let rotX = 0.003, rotY = 0.005;
+  let mouseX = 0, mouseY = 0;
+
+  for (let i = 0; i < N; i++) {
+    // Fibonacci sphere distribution
+    const phi   = Math.acos(1 - 2*(i+.5)/N);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+    particles.push({
+      ox: Math.sin(phi)*Math.cos(theta) * R,
+      oy: Math.sin(phi)*Math.sin(theta) * R,
+      oz: Math.cos(phi) * R,
+      x:0, y:0, z:0
+    });
+  }
+
+  document.addEventListener('mousemove', e => {
+    mouseX = (e.clientX / window.innerWidth  - .5) * .003;
+    mouseY = (e.clientY / window.innerHeight - .5) * .003;
+  });
+
+  function drawSphere() {
+    ctx.clearRect(0,0,W,H);
+
+    // Slowly update rotation influenced by mouse
+    rotY += mouseX + 0.004;
+    rotX += mouseY;
+    rotX *= 0.98; // dampen
+
+    const cy = Math.cos(rotX), sy = Math.sin(rotX);
+    const cx = Math.cos(rotY), sx = Math.sin(rotY);
+
+    particles.forEach(p => {
+      // Rotate around Y axis
+      let x1 = p.ox*cx + p.oz*sx;
+      let z1 = -p.ox*sx + p.oz*cx;
+      // Rotate around X axis
+      let y1 = p.oy*cy - z1*sy;
+      let z2 = p.oy*sy + z1*cy;
+      p.x = x1; p.y = y1; p.z = z2;
+    });
+
+    // Sort back to front
+    particles.sort((a,b) => a.z - b.z);
+
+    particles.forEach(p => {
+      // Perspective projection
+      const fov  = 600;
+      const scale= fov/(fov + p.z + R);
+      const sx   = p.x * scale + W/2;
+      const sy   = p.y * scale + H/2;
+      const sz   = (p.z + R) / (2*R); // 0 (back) to 1 (front)
+
+      // Color: cyan on front hemisphere, purple on back
+      const r = Math.round(sz * 0   + (1-sz) * 123);
+      const g = Math.round(sz * 245 + (1-sz) * 47);
+      const b = Math.round(sz * 255 + (1-sz) * 255);
+      const a = .3 + sz * .65;
+      const radius = .8 + sz * 1.6;
+
+      ctx.beginPath();
+      ctx.arc(sx, sy, radius, 0, Math.PI*2);
+
+      // Glowing particles near front
+      if (sz > .88) {
+        ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
+        ctx.shadowBlur  = 10;
+      } else {
+        ctx.shadowBlur  = 0;
+      }
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+      ctx.fill();
+    });
+
+    // Draw equatorial ring
+    ctx.save();
+    ctx.translate(W/2, H/2);
+    ctx.scale(1, Math.abs(Math.sin(rotX)) * .3 + .05);
+    const grad = ctx.createRadialGradient(0,0,R*.85, 0,0,R*1.05);
+    grad.addColorStop(0,'rgba(0,245,255,0)');
+    grad.addColorStop(.5,'rgba(0,245,255,0.08)');
+    grad.addColorStop(1,'rgba(0,245,255,0)');
+    ctx.beginPath();
+    ctx.arc(0,0,R,.98, 1.04*Math.PI*2);
+    ctx.strokeStyle = 'rgba(0,245,255,0.25)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    requestAnimationFrame(drawSphere);
+  }
+  drawSphere();
+})();
+
+
+/* ====================================================
+   3. STAT COUNTER ANIMATION
+==================================================== */
+(function() {
+  const els = document.querySelectorAll('.stat-value[data-target]');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const target = parseFloat(el.dataset.target);
+      const isFloat = String(target).includes('.');
+      let start = 0, duration = 1800;
+      const step = timestamp => {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        const val = progress * target;
+        el.textContent = isFloat ? val.toFixed(1) : Math.floor(val);
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = isFloat ? target.toFixed(1) : target;
+      };
+      requestAnimationFrame(step);
+      observer.unobserve(el);
+    });
+  }, { threshold: .5 });
+  els.forEach(el => observer.observe(el));
+})();
+
+
+/* ====================================================
+   4. VIRTUAL CURSOR ELEMENTS & SMOOTHING
+==================================================== */
+const cursor     = document.getElementById('virtual-cursor');
+const cursorRing = document.getElementById('virtual-cursor-ring');
+let   cursorX = 0, cursorY = 0;   // current virtual cursor position
+let   smoothX = 0, smoothY = 0;   // exponentially smoothed position
+let   handVisible = false;
+
+// Smoothing alpha (0-1): higher = more responsive, lower = smoother
+const CURSOR_SMOOTHING = 0.18;
+
+function moveCursor(x, y) {
+  // Exponential moving average for ultra-smooth cursor
+  smoothX = smoothX * (1 - CURSOR_SMOOTHING) + x * CURSOR_SMOOTHING;
+  smoothY = smoothY * (1 - CURSOR_SMOOTHING) + y * CURSOR_SMOOTHING;
+  
+  cursorX = Math.round(smoothX);
+  cursorY = Math.round(smoothY);
+  
+  cursor.style.left     = cursorX + 'px';
+  cursor.style.top      = cursorY + 'px';
+  cursorRing.style.left = cursorX + 'px';
+  cursorRing.style.top  = cursorY + 'px';
+}
+
+function setCursorVisible(v) {
+  cursor.style.display     = v ? 'block' : 'none';
+  cursorRing.style.display = v ? 'block' : 'none';
+}
+
+function setCursorPinching(p) {
+  cursor.classList.toggle('pinching', p);
+  cursorRing.classList.toggle('pinching', p);
+}
+
+
+/* ====================================================
+   5. HOVER LOGIC — highlight elements under cursor (STABLE)
+==================================================== */
+const interactables = document.querySelectorAll(
+  '.holo-card, .btn-primary, .btn-secondary, .nav-cta, .nav-links a'
+);
+
+let lastHovered = null;
+let hoverDebounceTimer = 0;
+const HOVER_DEBOUNCE = 2; // frames to debounce hover changes
+
+function updateHover() {
+  // Use elementFromPoint to find what's under the virtual cursor
+  // Temporarily hide cursor to allow hit-testing
+  cursor.style.display     = 'none';
+  cursorRing.style.display = 'none';
+  const el = document.elementFromPoint(cursorX, cursorY);
+  cursor.style.display     = handVisible ? 'block' : 'none';
+  cursorRing.style.display = handVisible ? 'block' : 'none';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // Find closest interactable ancestor
+  let target = null;
+  if (el) {
+    target = el.closest('.holo-card, .btn-primary, .btn-secondary, .nav-cta, .nav-links a');
+  }
+
+  // Debounce hover changes to prevent jitter
+  if (target !== lastHovered) {
+    hoverDebounceTimer++;
+    if (hoverDebounceTimer >= HOVER_DEBOUNCE) {
+      hoverDebounceTimer = 0;
+      
+      if (lastHovered) {
+        lastHovered.classList.remove('gesture-hover');
+      }
+      if (target) {
+        target.classList.add('gesture-hover');
+      }
+      lastHovered = target;
+    }
+  } else {
+    hoverDebounceTimer = 0;
+  }
+
+  return lastHovered;
+}
+
+
+/* ====================================================
+   6. MEDIAPIPE HANDS SETUP WITH ENHANCED STABILITY
+==================================================== */
+const videoEl      = document.getElementById('cam-video');
+const statusEl     = document.getElementById('gesture-status');
+
+// Landmark smoothing buffer (temporal filtering)
+const LANDMARK_BUFFER_SIZE = 5;
+let landmarkHistory = [];
+
+// Scroll gesture state with momentum
+let lastHandY = null;
+let lastScrollVelocity = 0;
+let scrollMomentumFrame = 0;
+let scrollCooldown = 0;
+
+// Pinch state with hysteresis (prevents flickering)
+let pinching = false;
+let pinchCooldown = 0;
+const PINCH_THRESHOLD_CLOSE = 0.055;  // threshold to enter pinch
+const PINCH_THRESHOLD_OPEN = 0.085;   // threshold to exit pinch (hysteresis)
+
+// For adaptive pinch based on hand size
+let handBoundingBoxDiagonal = 1.0;
+
+let hands;
+let handsLoaded = false;
+
+// Initialize hands with proper error handling
+function initializeHands() {
+  if (handsLoaded) return;
+  
+  try {
+    hands = new Hands({
+      locateFile: file =>
+        `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+    });
+
+    hands.setOptions({
+      maxNumHands: 1,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.75,
+      minTrackingConfidence: 0.70
+    });
+
+    hands.onResults(onResults);
+    handsLoaded = true;
+    console.log('✓ MediaPipe Hands initialized');
+    
+    // Once hands are ready, start camera
+    setTimeout(() => {
+      if (videoEl) startHandTracking();
+      else initCamera();
+    }, 100);
+    
+  } catch (err) {
+    console.error('Failed to initialize MediaPipe Hands:', err);
+    setTimeout(initializeHands, 2000);
+  }
+}
+
+// Initialize hands immediately
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeHands);
+} else {
+  initializeHands();
+}
+
+/* ========================================
+   Landmark smoothing: temporal filtering
+======================================== */
+function smoothLandmarks(landmarks) {
+  // Keep rolling buffer of recent landmark positions
+  landmarkHistory.push(landmarks);
+  if (landmarkHistory.length > LANDMARK_BUFFER_SIZE) {
+    landmarkHistory.shift();
+  }
+
+  // Average all landmarks in history
+  const smoothed = landmarks.map((_, idx) => {
+    let sumX = 0, sumY = 0, sumZ = 0;
+    landmarkHistory.forEach(h => {
+      sumX += h[idx].x;
+      sumY += h[idx].y;
+      sumZ += h[idx].z;
+    });
+    const count = landmarkHistory.length;
+    return {
+      x: sumX / count,
+      y: sumY / count,
+      z: sumZ / count
+    };
+  });
+  return smoothed;
+}
+
+/* ========================================
+   Calculate hand bounding box for adaptive scaling
+======================================== */
+function getHandSize(landmarks) {
+  let minX = 1, maxX = 0, minY = 1, maxY = 0;
+  landmarks.forEach(lm => {
+    minX = Math.min(minX, lm.x);
+    maxX = Math.max(maxX, lm.x);
+    minY = Math.min(minY, lm.y);
+    maxY = Math.max(maxY, lm.y);
+  });
+  const width = maxX - minX;
+  const height = maxY - minY;
+  return Math.sqrt(width*width + height*height);
+}
+
+/* ========================================
+   Main gesture processing
+======================================== */
+function onResults(results) {
+  if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+    handVisible = false;
+    setCursorVisible(false);
+    statusEl.textContent = 'NO HAND DETECTED';
+    statusEl.classList.remove('active');
+    lastHandY = null;
+    landmarkHistory = [];
+    return;
+  }
+
+  handVisible = true;
+  setCursorVisible(true);
+  statusEl.classList.add('active');
+
+  let rawLandmarks = results.multiHandLandmarks[0];
+  
+  // Smooth landmarks over time
+  const lm = smoothLandmarks(rawLandmarks);
+
+  // Get hand size for adaptive thresholds
+  handBoundingBoxDiagonal = getHandSize(lm);
+
+  /* ── LANDMARK KEY POINTS ──
+     Landmark  4 = Thumb tip
+     Landmark  8 = Index finger tip   ← drives cursor
+     Landmark  0 = Wrist              ← drives scroll
+     Landmark  5 = Index MCP          ← for hand size
+  */
+  const indexTip = lm[8];
+  const thumbTip = lm[4];
+  const wrist = lm[0];
+  const indexMCP = lm[5];
+
+  const screenW = window.innerWidth;
+  const screenH = window.innerHeight;
+
+  const sx = (1 - indexTip.x) * screenW;
+  const sy = indexTip.y * screenH;
+
+  moveCursor(sx, sy);
+  const hoveredEl = updateHover();
+
+  /* ── PINCH DETECTION WITH HYSTERESIS ──
+     Using both 2D and 3D distance for robustness
+     Hysteresis prevents rapid toggling between states
+  */
+  const dx = indexTip.x - thumbTip.x;
+  const dy = indexTip.y - thumbTip.y;
+  const dz = (indexTip.z || 0) - (thumbTip.z || 0);
+  const pinchDist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+  // Adaptive threshold based on hand size
+  const adaptiveThresholdClose = PINCH_THRESHOLD_CLOSE * (0.8 + handBoundingBoxDiagonal * 0.5);
+  const adaptiveThresholdOpen = PINCH_THRESHOLD_OPEN * (0.8 + handBoundingBoxDiagonal * 0.5);
+
+  if (pinchCooldown > 0) { pinchCooldown--; }
+
+  if (!pinching && pinchDist < adaptiveThresholdClose) {
+    // ENTER PINCH
+    pinching = true;
+    setCursorPinching(true);
+    statusEl.textContent = 'PINCH · CLICK';
+
+    if (hoveredEl && pinchCooldown === 0) {
+      pinchCooldown = 25;
+      hoveredEl.click();
+      hoveredEl.style.transition = 'box-shadow .1s';
+      hoveredEl.style.boxShadow = '0 0 60px rgba(255,60,110,0.8)';
+      setTimeout(() => { hoveredEl.style.boxShadow = ''; }, 150);
+    }
+  } else if (pinching && pinchDist > adaptiveThresholdOpen) {
+    // EXIT PINCH (with hysteresis gap)
+    pinching = false;
+    setCursorPinching(false);
+  }
+
+  /* ── SCROLL DETECTION WITH MOMENTUM ──
+     Smooth scrolling with velocity estimation
+     Only scroll with open hand (low pinch distance)
+  */
+  const SCROLL_VELOCITY_THRESHOLD = 0.008;
+  const HAND_OPEN_THRESHOLD = 0.12;
+  const MOMENTUM_DAMPING = 0.92;
+
+  if (scrollCooldown > 0) { 
+    scrollCooldown--;
+    // Apply momentum decay
+    if (scrollMomentumFrame > 0) {
+      const momentumAmount = lastScrollVelocity * 1200;
+      if (Math.abs(momentumAmount) > 0.5) {
+        window.scrollBy({ top: momentumAmount, behavior: 'instant' });
+        lastScrollVelocity *= MOMENTUM_DAMPING;
+        scrollMomentumFrame--;
+      } else {
+        scrollMomentumFrame = 0;
+      }
+    }
+  }
+
+  if (lastHandY !== null && pinchDist > HAND_OPEN_THRESHOLD && scrollCooldown === 0) {
+    const deltaY = wrist.y - lastHandY;
+
+    if (Math.abs(deltaY) > SCROLL_VELOCITY_THRESHOLD) {
+      lastScrollVelocity = deltaY;
+      const scrollAmount = deltaY * 1800;
+      window.scrollBy({ top: scrollAmount, behavior: 'instant' });
+      scrollCooldown = 4;
+      scrollMomentumFrame = 6;
+
+      statusEl.textContent = deltaY < 0 ? '↑ SCROLL UP' : '↓ SCROLL DOWN';
+    } else if (!pinching) {
+      statusEl.textContent = 'TRACKING';
+    }
+  } else if (!pinching) {
+    statusEl.textContent = 'TRACKING';
+  }
+
+  lastHandY = wrist.y;
+}
+
+
+/* ====================================================
+   7. CAMERA INITIALIZATION - AUTO START GESTURE TRACKING
+==================================================== */
+let videoEl, statusEl, cameraStream, camera;
+let gestureControlEnabled = true;
+let handsReady = false;
+
+async function initCamera() {
+  videoEl = document.getElementById('cam-video');
+  statusEl = document.getElementById('gesture-status');
+
+  if (!videoEl || !statusEl) {
+    console.log('Retrying DOM lookup...');
+    setTimeout(initCamera, 100);
+    return;
+  }
+
+  statusEl.textContent = 'REQUESTING CAMERA...';
+
+  try {
+    // Request camera access
+    const constraints = {
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        facingMode: 'user'
+      },
+      audio: false
+    };
+
+    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+    videoEl.srcObject = cameraStream;
+    statusEl.textContent = 'STARTING HAND TRACKING...';
+
+    // Wait for video to load, then start tracking
+    videoEl.onloadedmetadata = () => {
+      console.log('✓ Video stream ready:', videoEl.videoWidth, 'x', videoEl.videoHeight);
+      startHandTracking();
+    };
+
+    videoEl.play().catch(e => {
+      console.error('Video play error:', e);
+      statusEl.textContent = 'VIDEO ERROR';
+    });
+
+  } catch (err) {
+    console.error('Camera error:', err.name, err.message);
+    statusEl.textContent = `CAMERA: ${err.name}`;
+    setTimeout(initCamera, 3000);
+  }
+}
+
+function startHandTracking() {
+  if (!videoEl || !videoEl.videoWidth) {
+    console.log('Waiting for video...');
+    setTimeout(startHandTracking, 300);
+    return;
+  }
+
+  if (!handsLoaded) {
+    console.log('Waiting for MediaPipe...');
+    setTimeout(startHandTracking, 300);
+    return;
+  }
+
+  try {
+    if (camera) {
+      try { camera.stop(); } catch (e) { }
+    }
+
+    // Create camera with frame processing loop
+    camera = new Camera(videoEl, {
+      onFrame: async () => {
+        if (gestureControlEnabled && hands && handsLoaded) {
+          try {
+            await hands.send({ image: videoEl });
+          } catch (err) {
+            console.error('Hand detection error:', err);
+          }
+        }
+      },
+      width: videoEl.videoWidth,
+      height: videoEl.videoHeight
+    });
+
+    camera.start();
+    handsReady = true;
+    statusEl.textContent = 'READY · SHOW HAND';
+    statusEl.classList.add('active');
+    console.log('✓ Gesture tracking ACTIVE');
+
+  } catch (err) {
+    console.error('Camera utility error:', err);
+    statusEl.textContent = 'CAMERA INIT ERROR';
+    setTimeout(startHandTracking, 1500);
+  }
+}
+
+// Start camera when page loads
+window.addEventListener('load', () => {
+  setTimeout(initCamera, 100);
+});
+
+// Cleanup
+window.addEventListener('beforeunload', () => {
+  if (camera) try { camera.stop(); } catch (e) { }
+  if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+});
+
+
+/* ====================================================
+   8. CARD CLICK HANDLERS (demo)
+==================================================== */
+document.querySelectorAll('.holo-card').forEach(card => {
+  card.addEventListener('click', () => {
+    // Pulse animation on click
+    card.style.transition = 'transform .1s';
+    card.style.transform  = 'scale(.97)';
+    setTimeout(() => { card.style.transform = ''; }, 120);
+  });
+});
+
+document.querySelectorAll('.btn-primary, .btn-secondary, .nav-cta').forEach(btn => {
+  btn.addEventListener('click', () => {
+    btn.style.transition = 'transform .1s';
+    btn.style.transform  = 'scale(.95)';
+    setTimeout(() => { btn.style.transform = ''; }, 120);
+  });
+});
+
+// Use mouse as fallback when hand is not detected
+document.addEventListener('mousemove', e => {
+  if (!handVisible) {
+    moveCursor(e.clientX, e.clientY);
+    setCursorVisible(true);
+  }
+});
+</script>
 </body>
 </html>

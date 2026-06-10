@@ -1,0 +1,7 @@
+{
+  "name": "yuva-tech-ecosystem",
+  "version": 2,
+  "buildCommand": "echo 'Static site, no build needed'",
+  "outputDirectory": ".",
+  "public": true
+}
